@@ -24,6 +24,7 @@ class Bubble extends StatefulWidget {
 class _BubbleState extends State<Bubble> {
   VideoPlayerController playerController;
   VoidCallback listener;
+  List<String> selectedReportList = List();
 
   @override
   void initState() {
@@ -59,6 +60,12 @@ class _BubbleState extends State<Bubble> {
           children: _quickReplies(
               widget.msg.message, widget.msg.quickReplies, txtColor),
         );
+        break;
+      case MessageFormats.MultiSelect:
+        List<Widget> x = _quickRepliesMulti(widget.msg.message, widget.msg.quickRepliesMulti, txtColor);
+        x.add(RaisedButton(onPressed: null, child: Text("Send"), color: Colors.black,));
+        childElement = Column(children: x);
+
         break;
       case MessageFormats.CardsResponse:
         childElement = SingleChildScrollView(
@@ -133,38 +140,36 @@ class _BubbleState extends State<Bubble> {
     return childElement;
   }
 
-  List<Widget> _quickReplies(
+  List<Widget> _quickRepliesMulti(
       String msg, List<Options> quickReplies, Color txtColor) {
+    List<String> multiSelectOpions = [];
+    for (var item in quickReplies) {
+      multiSelectOpions.add(item.text);
+    }
+// MultiSelectChip(multiSelectOpions);
+
+List<Widget> suggestionsMulti = [
+      Html(data: msg, defaultTextStyle: TextStyle(color: txtColor))
+    ];
+
+    suggestionsMulti.add(
+      MultiSelectChip(multiSelectOpions,onSelectionChanged: (selectedList) {
+                setState(() {
+                  selectedReportList = selectedList;
+                });
+              },)
+              ) ;
+
+    return suggestionsMulti;
+    ;
+  }
+
+  List<Widget> _quickReplies(
+      String msg, 
+      List<Options> quickReplies, Color txtColor) {
     List<Widget> suggestions = [
       Html(data: msg, defaultTextStyle: TextStyle(color: txtColor))
     ];
-    // if (quickReplies != null) {
-    //   for (var option in quickReplies) {
-    //     suggestions.add(OutlineButton(
-    //         child: option.image != null
-    //             ? Row(
-    //                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-    //                 children: <Widget>[
-    //                   CircleAvatar(backgroundImage: NetworkImage(option.image)),
-    //                   Text(option.title)
-    //                 ],
-    //               )
-    //             : Text(option.title),
-    //         onPressed: () {
-    //           if (option.text != null && option.text != '') {
-    //             print(option.text);
-    //             // _isComposingMessage = true;
-    //             // _textEditingController.text = option.text;
-    //             // _textMessageSubmitted(_textEditingController.text);
-    //             widget.notifyParent(option.text);
-    //           } else if (option.url != null && option.url != '') {
-    //             _launchURL(option.url);
-    //           }
-    //         },
-    //         shape: new RoundedRectangleBorder(
-    //             borderRadius: new BorderRadius.circular(30.0))));
-    //   }
-    // }
 
     return suggestions;
   }
@@ -311,19 +316,61 @@ class _BubbleState extends State<Bubble> {
             children: <Widget>[
               Text(widget.msg.time,
                   style: TextStyle(
-                    color: Colors.black38,
+                    color: Color.fromRGBO(85, 204, 246, 1),
                     fontSize: 10.0,
                   )),
               SizedBox(width: 3.0),
               Icon(
                 icon,
                 size: 12.0,
-                color: Colors.black38,
+                color: Color.fromRGBO(85, 204, 246, 1),
               )
             ],
           ),
         ),
       ],
     );
+  }
+}
+
+class MultiSelectChip extends StatefulWidget {
+  final List<String> reportList;
+  final Function(List<String>) onSelectionChanged;
+  MultiSelectChip(this.reportList, {this.onSelectionChanged});
+  @override
+  _MultiSelectChipState createState() => _MultiSelectChipState();
+}
+
+class _MultiSelectChipState extends State<MultiSelectChip> {
+  // String selectedChoice = "";
+  List<String> selectedChoices = List();
+
+  _buildChoiceList() {
+    List<Widget> choices = List();
+
+    widget.reportList.forEach((item) {
+      choices.add(Container(
+        child: ChoiceChip(
+          label: Text(item),
+          selected: selectedChoices.contains(item),
+          onSelected: (selected) {
+            setState(() {
+              selectedChoices.contains(item)
+                  ? selectedChoices.remove(item)
+                  : selectedChoices.add(item);
+              widget.onSelectionChanged(selectedChoices);
+            });
+          },
+        ),
+      ));
+    });
+
+    return choices;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: _buildChoiceList());
   }
 }

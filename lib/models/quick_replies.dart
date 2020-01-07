@@ -1,11 +1,14 @@
 class QuickReplies {
   String title;
+  bool multiSelect;
   List<Options> options;
 
-  QuickReplies({this.title, this.options});
+  QuickReplies({this.title, this.options, this.multiSelect});
 
   QuickReplies.fromJson(Map<String, dynamic> json) {
     title = json['title'];
+    if(json['multiSelect']!= null) multiSelect = json['multiSelect'];
+    else multiSelect = false;
     if (json['options'] != null) {
       options = new List<Options>();
       json['options'].forEach((v) {

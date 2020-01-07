@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'quick_replies.dart';
 import 'cards.dart';
 
-enum MessageFormats { Text, Image, Link, QuickReplies, Video, CardsResponse }
+enum MessageFormats { Text, Image, Link, QuickReplies, Video, CardsResponse, MultiSelect }
 
 class Message {
   int id;
@@ -15,6 +15,7 @@ class Message {
   bool isMe;
   MessageFormats format;
   List<Options> quickReplies;
+  List<Options> quickRepliesMulti;
   CardResponse cards;
   bool isLocalFile;
 
@@ -22,7 +23,8 @@ class Message {
       {this.format = MessageFormats.Text,
       this.quickReplies,
       this.isLocalFile,
-      this.cards});
+      this.cards,
+      this.quickRepliesMulti});
 
   // convenience constructor to create a Message object
   Message.fromMap(Map<String, dynamic> map) {

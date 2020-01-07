@@ -7,14 +7,11 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:speech_recognition/speech_recognition.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_xmpp/flutter_xmpp.dart';
 
-import 'common/rounded_image_widget.dart';
 import 'models/configMap.dart';
 import 'common/bubble.dart';
-import 'common/topbar.dart';
 import 'database_helpers.dart';
 import 'models/cards.dart';
 import 'models/quick_replies.dart';
@@ -42,9 +39,7 @@ class _ChatPageState extends State<ChatPage> {
   File _image;
   String getPermission = '';
   List<Widget> bubbles = [];
-  SpeechRecognition _speechRecognition;
   bool _isAvailable = false;
-  bool _isListening = false;
   bool ready = false;
   StreamSubscription chatStreamSubscription;
   List<Widget> suggestions = [];
@@ -111,7 +106,23 @@ class _ChatPageState extends State<ChatPage> {
       } else if (replyText['quickReplies'] != null) {
         QuickReplies quickReplies =
             QuickReplies.fromJson(replyText['quickReplies']);
+          if(quickReplies.multiSelect){
+            setState(() {
+           bubbles.add(Bubble(
+            msg: Message(quickReplies.title, DateFormat('kk:mm').format(now),
+                true, false,
+                format: MessageFormats.MultiSelect,
+                quickRepliesMulti: quickReplies.options
+              ),
+            notifyParent: refresh,
+          ));
 
+          _saveMessage(Message(
+              quickReplies.title, DateFormat('kk:mm').format(now), true, false,
+              format: MessageFormats.QuickReplies));
+        });
+          }
+          else{
         setState(() {
           bubbles.add(Bubble(
             msg: Message(quickReplies.title, DateFormat('kk:mm').format(now),
@@ -126,6 +137,7 @@ class _ChatPageState extends State<ChatPage> {
               quickReplies.title, DateFormat('kk:mm').format(now), true, false,
               format: MessageFormats.QuickReplies));
         });
+          }
       } else if (replyText['image'] != null) {
         setState(() {
           bubbles.add(Bubble(
@@ -175,22 +187,20 @@ class _ChatPageState extends State<ChatPage> {
       );
     }
   }
-String removeAllHtmlTags(String htmlText) {
-    RegExp exp = RegExp(
-      r"<[^>]*>",
-      multiLine: true,
-      caseSensitive: true
-    );
+
+  String removeAllHtmlTags(String htmlText) {
+    RegExp exp = RegExp(r"<[^>]*>", multiLine: true, caseSensitive: true);
 
     return htmlText.replaceAll(exp, '');
   }
+
   void _setSuggestions(List<Options> quickReplies) {
     if (quickReplies != null) {
       suggestions = [];
       for (var option in quickReplies) {
         setState(() {
           suggestions.add(OutlineButton(
-            highlightedBorderColor: Colors.blue,
+              highlightedBorderColor: Colors.blue,
               child: option.image != null
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -209,8 +219,7 @@ String removeAllHtmlTags(String htmlText) {
                   refresh(option.text, title: option.title);
                 } else if (option.url != null && option.url != '') {
                   _launchURL(option.url);
-                }
-                else{
+                } else {
                   refresh(option.title);
                 }
               },
@@ -226,8 +235,6 @@ String removeAllHtmlTags(String htmlText) {
   void initState() {
     super.initState();
     _getConfigurations();
-    // requestPermission();
-    initSpeechRecognizer();
     _enableStream();
     //Creating chat bubbles
     if (bubbles.length == 0)
@@ -247,112 +254,68 @@ String removeAllHtmlTags(String htmlText) {
     super.dispose();
   }
 
-  void initSpeechRecognizer() {
-    _speechRecognition = SpeechRecognition();
 
-    _speechRecognition.setAvailabilityHandler(
-      (bool result) => setState(() => _isAvailable = result),
-    );
-
-    _speechRecognition.setRecognitionStartedHandler(
-      () => setState(() => _isListening = true),
-    );
-
-    _speechRecognition.setRecognitionResultHandler(
-      (String speech) => setState(() => _textEditingController.text = speech),
-      // (String speech) => setState(() => resultText = speech),
-    );
-
-    _speechRecognition.setRecognitionCompleteHandler(
-      (String speech) => setState(() => _isListening = false),
-    );
-
-    _speechRecognition.activate().then(
-          (result) => setState(() => _isAvailable = result),
-        );
-  }
 
   @override
   Widget build(BuildContext context) {
     maxWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final logoHeight = screenHeight * 0.5;
     return Scaffold(
-      appBar: AppBar(
-        //  TopBar(configMap.botIcon)
-        backgroundColor: Color.fromRGBO(0, 102, 167,1),
-        leading: Hero(
+        appBar: AppBar(
+          //  TopBar(configMap.botIcon)
+          backgroundColor: Color.fromRGBO(0, 102, 167, 1),
+          leading: Hero(
             tag: "boticon",
             child: Image.network(configMap.botIcon),
-            ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(configMap.botName),
-            Text(configMap.botDesc, style: TextStyle(fontSize: 13)),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(configMap.botName),
+              Text(configMap.botDesc, style: TextStyle(fontSize: 13)),
+            ],
+          ),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.home),
+              color: Colors.white,
+              onPressed: () => MessengerService.sendMessage('Hi'),
+            )
           ],
         ),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.home),
-            color: Colors.white,
-            onPressed: () => MessengerService.sendMessage('Hi'),
-          )
-        ],
-        
-      ),
         body: Stack(
-      children: <Widget>[
-        // Transform.translate(
-        //   offset: Offset(screenWidth * 0.3, 0),
-        //   child: Transform.rotate(
-        //     angle: -0.3,
-        //     child: Opacity(
-        //       child: Image.network(
-        //         configMap.botIcon,
-        //         height: logoHeight,
-        //         // color: logoTintColor,
-        //       ),
-        //       opacity: 0.4,
-        //     ),
-        //   ),
-        // ),
-        Column(
           children: <Widget>[
-            Flexible(
-              fit: FlexFit.tight,
-              child: Container(
-                child: _chatBubbles(),
-              ),
-            ),
-            Divider(height: 4.0),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: suggestions,
+            Column(
+              children: <Widget>[
+                Flexible(
+                  fit: FlexFit.tight,
+                  child: Container(
+                    child: _chatBubbles(),
+                  ),
                 ),
-              ),
-            ),
-            Divider(height: 4.0),
-            Container(
-              decoration: BoxDecoration(color: Theme.of(context).cardColor),
-              child: hideInput
-                  ? Container(
-                      height: 20,
-                    )
-                  : _messageEditor(),
+                Divider(height: 4.0),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: suggestions,
+                    ),
+                  ),
+                ),
+                Divider(height: 4.0),
+                Container(
+                  decoration: BoxDecoration(color: Theme.of(context).cardColor),
+                  child: hideInput
+                      ? Container(
+                          height: 20,
+                        )
+                      : _messageEditor(),
+                ),
+              ],
             ),
           ],
-        ),
-        // Padding(
-        //   padding: const EdgeInsets.fromLTRB(10, 40, 10, 0),
-        //   child: TopBar(configMap.botIcon),
-        // ),
-      ],
-    ));
+        ));
   }
 
   Widget _chatBubbles() {
@@ -429,20 +392,11 @@ String removeAllHtmlTags(String htmlText) {
     return RaisedButton(
       color: Colors.blue,
       shape: CircleBorder(),
-      onPressed: _isComposingMessage
-          ? () => _textMessageSubmitted(_textEditingController.text)
-          : () {
-              if (_isAvailable && !_isListening) {
-                _speechRecognition.listen(locale: "en_US").then((result) {
-                  _textEditingController.text = resultText;
-                  _isComposingMessage = true;
-                });
-              }
-            },
+      onPressed: () => _textMessageSubmitted(_textEditingController.text),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Icon(
-          _isComposingMessage ? Icons.send : Icons.mic,
+          Icons.send,
           color: TextColorLight,
           size: 30.0,
         ),
@@ -451,12 +405,6 @@ String removeAllHtmlTags(String htmlText) {
   }
 
   Future<Null> _textMessageSubmitted(String text, {String title}) async {
-    if (_isListening)
-      _speechRecognition.stop().then((onValue) {
-        _speechRecognition
-            .activate()
-            .then((result) => setState(() => _isAvailable = result));
-      });
     DateTime now = DateTime.now();
     print(title);
     var queueMessage = Message(title != null ? title : text,
@@ -485,15 +433,6 @@ Future<String> sendMessage(String msgBody) async {
   return msg;
 }
 
-// Setting/Requesting permissions at run time
-// requestPermission() async {
-//   final res =
-//       await Permission.requestSinglePermission(PermissionName.Microphone);
-//   final res2 = await Permission.requestSinglePermission(PermissionName.Phone);
-//   print(res);
-//   print(res2);
-// }
-
 Future<List<Message>> _readMessage(int rowId) async {
   DatabaseHelper helper = DatabaseHelper.instance;
 
@@ -513,13 +452,6 @@ _saveMessage(Message messageData) async {
   DatabaseHelper helper = DatabaseHelper.instance;
   int id = await helper.insertMessage(messageData);
   print('inserted row: $id');
-}
-
-//To remove after testing
-_clearTable() async {
-  DatabaseHelper helper = DatabaseHelper.instance;
-  await helper.clearTable();
-  print('deleted Table');
 }
 
 _launchURL(url) async {
