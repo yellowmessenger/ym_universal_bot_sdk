@@ -10,8 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_recognition/speech_recognition.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_xmpp/flutter_xmpp.dart';
-import 'package:ym_universal_bot_sdk/models/configMap.dart';
 
+import 'models/configMap.dart';
 import 'common/bubble.dart';
 import 'common/topbar.dart';
 import 'database_helpers.dart';
@@ -48,20 +48,20 @@ class _ChatPageState extends State<ChatPage> {
   StreamSubscription chatStreamSubscription;
   List<Widget> suggestions = [];
   ConfigMap configMap;
+  bool hideInput = false;
 
-
-   _getConfigurations() async{
-      final prefs = await SharedPreferences.getInstance();
-      setState(() {
         configMap = ConfigMap(
+  _getConfigurations() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      configMap = ConfigMap(
         prefs.getString('botName'),
         prefs.getString('botTitle'),
         prefs.getString('botDesc'),
         prefs.getString('botIntro'),
         prefs.getString('botIcon'),
       );
-      });
-
+    });
   }
 
   String resultText = "";
@@ -160,6 +160,14 @@ class _ChatPageState extends State<ChatPage> {
         });
       }
 
+      if (replyText['hideInput'] != null) {
+        setState(() {
+          hideInput = replyText['hideInput'];
+        });
+      } else {
+        hideInput = false;
+      }
+
       _scrollController.animateTo(
         0.0,
         curve: Curves.easeOut,
@@ -167,12 +175,22 @@ class _ChatPageState extends State<ChatPage> {
       );
     }
   }
+String removeAllHtmlTags(String htmlText) {
+    RegExp exp = RegExp(
+      r"<[^>]*>",
+      multiLine: true,
+      caseSensitive: true
+    );
 
+    return htmlText.replaceAll(exp, '');
+  }
   void _setSuggestions(List<Options> quickReplies) {
     if (quickReplies != null) {
+      suggestions = [];
       for (var option in quickReplies) {
         setState(() {
           suggestions.add(OutlineButton(
+            highlightedBorderColor: Colors.blue,
               child: option.image != null
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -182,12 +200,18 @@ class _ChatPageState extends State<ChatPage> {
                         Html(data: option.title)
                       ],
                     )
-                  : Html(data: option.title),
+                  : Html(
+                      data: option.title,
+                      shrinkToFit: true,
+                    ),
               onPressed: () {
                 if (option.text != null && option.text != '') {
-                  refresh(option.text);
+                  refresh(option.text, title: option.title);
                 } else if (option.url != null && option.url != '') {
                   _launchURL(option.url);
+                }
+                else{
+                  refresh(option.title);
                 }
               },
               shape: new RoundedRectangleBorder(
@@ -214,7 +238,7 @@ class _ChatPageState extends State<ChatPage> {
           }
         });
       });
-      MessengerService.sendMessage(widget.homeButtonMessage);
+    MessengerService.sendMessage(widget.homeButtonMessage);
   }
 
   @override
@@ -256,53 +280,59 @@ class _ChatPageState extends State<ChatPage> {
     final logoHeight = screenHeight * 0.5;
     return Scaffold(
         body: Stack(
-          children: <Widget>[
-            Transform.translate(
-              offset: Offset(screenWidth * 0.3, 0),
-              child: Transform.rotate(
-                angle: -0.3,
-                child: Image.asset(
-                  "images/logo.png",
-                  height: logoHeight,
-                  color: logoTintColor,
+      children: <Widget>[
+        // Transform.translate(
+        //   offset: Offset(screenWidth * 0.3, 0),
+        //   child: Transform.rotate(
+        //     angle: -0.3,
+        //     child: Opacity(
+        //       child: Image.network(
+        //         configMap.botIcon,
+        //         height: logoHeight,
+        //         // color: logoTintColor,
+        //       ),
+        //       opacity: 0.4,
+        //     ),
+        //   ),
+        // ),
+        Padding(
+          padding: const EdgeInsets.only(top: 45),
+          child: Column(
+            children: <Widget>[
+              Flexible(
+                fit: FlexFit.tight,
+                child: Container(
+                  child: _chatBubbles(),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 45),
-              child: Column(
-                children: <Widget>[
-                  Flexible(
-                    fit: FlexFit.tight,
-                    child: Container(
-                      child: _chatBubbles(),
-                    ),
+              Divider(height: 4.0),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: suggestions,
                   ),
-                  Divider(height: 4.0),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: suggestions,
-                      ),
-                    ),
-                  ),
-                  Divider(height: 4.0),
-                  Container(
-                    decoration:
-                        BoxDecoration(color: Theme.of(context).cardColor),
-                    child: _messageEditor(),
-                  ),
-                ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 40, 10, 0),
-              child: TopBar(configMap.botIcon),
-            ),
-          ],
-        ));
+              Divider(height: 4.0),
+              Container(
+                decoration: BoxDecoration(color: Theme.of(context).cardColor),
+                child: hideInput
+                    ? Container(
+                        height: 20,
+                      )
+                    : _messageEditor(),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 40, 10, 0),
+          child: TopBar(configMap.botIcon),
+        ),
+      ],
+    ));
   }
 
   Widget _chatBubbles() {
@@ -330,11 +360,11 @@ class _ChatPageState extends State<ChatPage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-             IconButton(
-               color: Colors.white,
-                  icon: Icon(Icons.attach_file),
-                  onPressed: getImage,
-                ),
+            IconButton(
+              color: Colors.white,
+              icon: Icon(Icons.attach_file),
+              onPressed: getImage,
+            ),
             Flexible(
               child: TextField(
                 cursorColor: TextColorLight,
@@ -369,10 +399,11 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-_sendFromKeyboard(){
-  if(_textEditingController.text.isNotEmpty)
-   _textMessageSubmitted(_textEditingController.text);
-}
+  _sendFromKeyboard() {
+    if (_textEditingController.text.isNotEmpty)
+      _textMessageSubmitted(_textEditingController.text);
+    FocusScope.of(context).unfocus();
+  }
 
   RaisedButton _getDefaultSendButton() {
     return RaisedButton(
@@ -399,7 +430,7 @@ _sendFromKeyboard(){
     );
   }
 
-  Future<Null> _textMessageSubmitted(String text) async {
+  Future<Null> _textMessageSubmitted(String text, {String title}) async {
     if (_isListening)
       _speechRecognition.stop().then((onValue) {
         _speechRecognition
@@ -407,8 +438,9 @@ _sendFromKeyboard(){
             .then((result) => setState(() => _isAvailable = result));
       });
     DateTime now = DateTime.now();
-    var queueMessage =
-        Message(text, DateFormat('kk:mm').format(now), true, true);
+    print(title);
+    var queueMessage = Message(title != null ? title : text,
+        DateFormat('kk:mm').format(now), true, true);
     setState(() {
       bubbles.add(Bubble(msg: queueMessage));
     });
@@ -420,8 +452,10 @@ _sendFromKeyboard(){
     });
   }
 
-  refresh(String message) {
-    _textMessageSubmitted(message);
+  refresh(String message, {String title}) {
+    title != null
+        ? _textMessageSubmitted(message, title: removeAllHtmlTags(title))
+        : _textMessageSubmitted(removeAllHtmlTags(message));
     suggestions.clear();
   }
 }

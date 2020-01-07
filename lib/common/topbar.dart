@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import './rounded_image_widget.dart';
+import '../services/messengerService.dart';
 
 class TopBar extends StatefulWidget {
   final String botIcon;
@@ -55,7 +56,11 @@ class HeaderPanel extends StatelessWidget {
             child: RoundedImageWidget(imagePath: botIcon, isOnline: true)
             ),
           
-          _simplePopup(),
+          // _simplePopup(),
+          IconButton(
+            icon: Icon(Icons.home),
+            onPressed: () => MessengerService.sendMessage('Hi'),
+          )
         ],
       ),
     );

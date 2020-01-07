@@ -27,9 +27,13 @@ class RoundedImageWidget extends StatelessWidget {
                   width: imageSize,
                   height: imageSize,
                   child: ClipOval(
-                    child: Image.network(
-                      imagePath,
-                      fit: BoxFit.cover,
+                    child: Container(
+                      color: Colors.white,
+                      child: Image.network(
+                        imagePath,
+                        fit: BoxFit.cover,
+                        
+                      ),
                     ),
                   ),
                 ),

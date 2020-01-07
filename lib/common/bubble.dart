@@ -61,14 +61,11 @@ VoidCallback listener;
         );
         break;
       case MessageFormats.CardsResponse:
-        childElement = Container(
-          width: widget.maxWidth,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _createCards(widget.msg.cards)),
-          ),
+        childElement = SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _createCards(widget.msg.cards)),
         );
         break; //todo
       case MessageFormats.Image:
@@ -231,7 +228,7 @@ VoidCallback listener;
         ),
         onTap: () {
           if (action.text != null) {
-            widget.notifyParent(action.text);
+            widget.notifyParent(action.text, title: action.title);
           } else if (action.url != null) {
             UrlLauncher.launchURL(action.url);
           } else if (regExp.hasMatch(action.title)) {
@@ -250,20 +247,20 @@ VoidCallback listener;
 
   @override
   Widget build(BuildContext context) {
-    final bg = widget.msg.isMe ? Colors.yellowAccent.shade100 : Colors.white;
+    final bg = widget.msg.isMe ? Colors.blue : Colors.white;
     final align =
         widget.msg.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     final icon = widget.msg.delivered ? Icons.done_all : Icons.done;
     final radius = widget.msg.isMe
         ? BorderRadius.only(
-            topLeft: Radius.circular(5.0),
-            bottomLeft: Radius.circular(5.0),
+            topLeft: Radius.circular(10.0),
+            bottomLeft: Radius.circular(10.0),
             bottomRight: Radius.circular(10.0),
           )
         : BorderRadius.only(
-            topRight: Radius.circular(5.0),
+            topRight: Radius.circular(10.0),
             bottomLeft: Radius.circular(10.0),
-            bottomRight: Radius.circular(5.0),
+            bottomRight: Radius.circular(10.0),
           );
 
     final messageBody = _messageBody();
@@ -273,8 +270,8 @@ VoidCallback listener;
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Container(
-            margin: const EdgeInsets.all(3.0),
+          child: widget.msg.format != MessageFormats.CardsResponse ? Container(
+            margin: const EdgeInsets.all(0.0),
             padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
               boxShadow: [
@@ -286,37 +283,49 @@ VoidCallback listener;
               color: bg,
               borderRadius: radius,
             ),
-            child: Stack(
-              children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(right: 48.0),
-                  child: messageBody,
-                ),
-                Positioned(
-                  bottom: 0.0,
-                  right: 0.0,
-                  child: Row(
-                    children: <Widget>[
-                      Text(widget.msg.time,
-                          style: TextStyle(
-                            color: Colors.black38,
-                            fontSize: 10.0,
-                          )),
-                      SizedBox(width: 3.0),
-                      Icon(
-                        icon,
-                        size: 12.0,
-                        color: Colors.black38,
-                      )
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
+            child: _buildmessage(messageBody, icon),
+          ) : _buildmessage(messageBody, icon),
         )
       ],
     );
+  }
+
+  Stack _buildmessage(Widget messageBody, IconData icon) {
+    return Stack(
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.only(right: 0.0),
+                child: Column(
+                  children: <Widget>[
+                    messageBody,
+                    Container(
+                      width: 48.0,
+                      height: 16,
+                    )
+                  ],
+                ),
+              ),
+              Positioned(
+                bottom: 0.0,
+                right: 0.0,
+                child: Row(
+                  children: <Widget>[
+                    Text(widget.msg.time,
+                        style: TextStyle(
+                          color: Colors.black38,
+                          fontSize: 10.0,
+                        )),
+                    SizedBox(width: 3.0),
+                    Icon(
+                      icon,
+                      size: 12.0,
+                      color: Colors.black38,
+                    )
+                  ],
+                ),
+              ),
+            ],
+          );
   }
 }
 
