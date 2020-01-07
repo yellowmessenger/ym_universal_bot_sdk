@@ -10,9 +10,7 @@ import '../models/quick_replies.dart';
 import '../models/Message.dart';
 import '../models/cards.dart' as cardModel;
 
-
 class Bubble extends StatefulWidget {
-  
   final Function notifyParent;
   final Message msg;
   final double maxWidth;
@@ -24,9 +22,8 @@ class Bubble extends StatefulWidget {
 }
 
 class _BubbleState extends State<Bubble> {
-
-VideoPlayerController playerController;
-VoidCallback listener;
+  VideoPlayerController playerController;
+  VoidCallback listener;
 
   @override
   void initState() {
@@ -44,20 +41,23 @@ VoidCallback listener;
         ..initialize();
     }
   }
-  
 
   Widget _messageBody() {
+    final txtColor = widget.msg.isMe ? Colors.black : Colors.white;
     Widget childElement;
     switch (widget.msg.format) {
       case MessageFormats.Text:
-        childElement = Text(widget.msg.message);
+        childElement =
+            Text(widget.msg.message, style: TextStyle(color: txtColor));
         break;
       case MessageFormats.Link:
-        childElement = Text(widget.msg.message);
+        childElement =
+            Text(widget.msg.message, style: TextStyle(color: txtColor));
         break; //todo
       case MessageFormats.QuickReplies:
         childElement = Column(
-          children: _quickReplies(widget.msg.message, widget.msg.quickReplies),
+          children: _quickReplies(
+              widget.msg.message, widget.msg.quickReplies, txtColor),
         );
         break;
       case MessageFormats.CardsResponse:
@@ -98,30 +98,27 @@ VoidCallback listener;
               child: Align(
                 alignment: Alignment.center,
                 child: IconButton(
-                  icon: Icon(
-                    playerController == null ?
-                      Icons.hourglass_full
-                     :
-                     playerController.value.isPlaying ?  Icons.pause_circle_outline : Icons.play_circle_outline
-                    ),
+                  icon: Icon(playerController == null
+                      ? Icons.hourglass_full
+                      : playerController.value.isPlaying
+                          ? Icons.pause_circle_outline
+                          : Icons.play_circle_outline),
                   color: Colors.red,
                   iconSize: 50,
                   onPressed: () {
-                    if(playerController == null){
+                    if (playerController == null) {
                       createVideo(widget.msg.message);
                       playerController.play();
-                    }
-                    else if(playerController.value.duration == playerController.value.position) {
+                    } else if (playerController.value.duration ==
+                        playerController.value.position) {
                       print("Video restarting");
                       playerController.seekTo(Duration(seconds: 0));
                       playerController.play();
+                    } else {
+                      playerController.value.isPlaying
+                          ? playerController.pause()
+                          : playerController.play();
                     }
-                    else {playerController.value.isPlaying
-                        ? playerController.pause()
-                        : playerController.play();
-                    }
-                    
-                    
                   },
                 ),
               ),
@@ -136,11 +133,10 @@ VoidCallback listener;
     return childElement;
   }
 
-  List<Widget> _quickReplies(String msg, List<Options> quickReplies) {
+  List<Widget> _quickReplies(
+      String msg, List<Options> quickReplies, Color txtColor) {
     List<Widget> suggestions = [
-      Html(
-        data: msg,
-      )
+      Html(data: msg, defaultTextStyle: TextStyle(color: txtColor))
     ];
     // if (quickReplies != null) {
     //   for (var option in quickReplies) {
@@ -247,7 +243,8 @@ VoidCallback listener;
 
   @override
   Widget build(BuildContext context) {
-    final bg = widget.msg.isMe ? Colors.blue : Colors.white;
+    final bg = widget.msg.isMe ? Colors.white : Color.fromRGBO(0, 102, 167, 1);
+
     final align =
         widget.msg.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     final icon = widget.msg.delivered ? Icons.done_all : Icons.done;
@@ -270,21 +267,23 @@ VoidCallback listener;
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: widget.msg.format != MessageFormats.CardsResponse ? Container(
-            margin: const EdgeInsets.all(0.0),
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                    blurRadius: .5,
-                    spreadRadius: 1.0,
-                    color: Colors.black.withOpacity(.12))
-              ],
-              color: bg,
-              borderRadius: radius,
-            ),
-            child: _buildmessage(messageBody, icon),
-          ) : _buildmessage(messageBody, icon),
+          child: widget.msg.format != MessageFormats.CardsResponse
+              ? Container(
+                  margin: const EdgeInsets.all(0.0),
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                          blurRadius: .5,
+                          spreadRadius: 1.0,
+                          color: Colors.black.withOpacity(.12))
+                    ],
+                    color: bg,
+                    borderRadius: radius,
+                  ),
+                  child: _buildmessage(messageBody, icon),
+                )
+              : _buildmessage(messageBody, icon),
         )
       ],
     );
@@ -292,40 +291,39 @@ VoidCallback listener;
 
   Stack _buildmessage(Widget messageBody, IconData icon) {
     return Stack(
+      children: <Widget>[
+        Padding(
+          padding: EdgeInsets.only(right: 0.0),
+          child: Column(
             children: <Widget>[
-              Padding(
-                padding: EdgeInsets.only(right: 0.0),
-                child: Column(
-                  children: <Widget>[
-                    messageBody,
-                    Container(
-                      width: 48.0,
-                      height: 16,
-                    )
-                  ],
-                ),
-              ),
-              Positioned(
-                bottom: 0.0,
-                right: 0.0,
-                child: Row(
-                  children: <Widget>[
-                    Text(widget.msg.time,
-                        style: TextStyle(
-                          color: Colors.black38,
-                          fontSize: 10.0,
-                        )),
-                    SizedBox(width: 3.0),
-                    Icon(
-                      icon,
-                      size: 12.0,
-                      color: Colors.black38,
-                    )
-                  ],
-                ),
-              ),
+              messageBody,
+              Container(
+                width: 48.0,
+                height: 16,
+              )
             ],
-          );
+          ),
+        ),
+        Positioned(
+          bottom: 0.0,
+          right: 0.0,
+          child: Row(
+            children: <Widget>[
+              Text(widget.msg.time,
+                  style: TextStyle(
+                    color: Colors.black38,
+                    fontSize: 10.0,
+                  )),
+              SizedBox(width: 3.0),
+              Icon(
+                icon,
+                size: 12.0,
+                color: Colors.black38,
+              )
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
-

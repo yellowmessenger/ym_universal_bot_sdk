@@ -11,6 +11,7 @@ import 'package:speech_recognition/speech_recognition.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_xmpp/flutter_xmpp.dart';
 
+import 'common/rounded_image_widget.dart';
 import 'models/configMap.dart';
 import 'common/bubble.dart';
 import 'common/topbar.dart';
@@ -50,7 +51,6 @@ class _ChatPageState extends State<ChatPage> {
   ConfigMap configMap;
   bool hideInput = false;
 
-        configMap = ConfigMap(
   _getConfigurations() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -279,6 +279,29 @@ String removeAllHtmlTags(String htmlText) {
     final screenWidth = MediaQuery.of(context).size.width;
     final logoHeight = screenHeight * 0.5;
     return Scaffold(
+      appBar: AppBar(
+        //  TopBar(configMap.botIcon)
+        backgroundColor: Color.fromRGBO(0, 102, 167,1),
+        leading: Hero(
+            tag: "boticon",
+            child: Image.network(configMap.botIcon),
+            ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(configMap.botName),
+            Text(configMap.botDesc, style: TextStyle(fontSize: 13)),
+          ],
+        ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.home),
+            color: Colors.white,
+            onPressed: () => MessengerService.sendMessage('Hi'),
+          )
+        ],
+        
+      ),
         body: Stack(
       children: <Widget>[
         // Transform.translate(
@@ -295,42 +318,39 @@ String removeAllHtmlTags(String htmlText) {
         //     ),
         //   ),
         // ),
-        Padding(
-          padding: const EdgeInsets.only(top: 45),
-          child: Column(
-            children: <Widget>[
-              Flexible(
-                fit: FlexFit.tight,
-                child: Container(
-                  child: _chatBubbles(),
+        Column(
+          children: <Widget>[
+            Flexible(
+              fit: FlexFit.tight,
+              child: Container(
+                child: _chatBubbles(),
+              ),
+            ),
+            Divider(height: 4.0),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: suggestions,
                 ),
               ),
-              Divider(height: 4.0),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    children: suggestions,
-                  ),
-                ),
-              ),
-              Divider(height: 4.0),
-              Container(
-                decoration: BoxDecoration(color: Theme.of(context).cardColor),
-                child: hideInput
-                    ? Container(
-                        height: 20,
-                      )
-                    : _messageEditor(),
-              ),
-            ],
-          ),
+            ),
+            Divider(height: 4.0),
+            Container(
+              decoration: BoxDecoration(color: Theme.of(context).cardColor),
+              child: hideInput
+                  ? Container(
+                      height: 20,
+                    )
+                  : _messageEditor(),
+            ),
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(10, 40, 10, 0),
-          child: TopBar(configMap.botIcon),
-        ),
+        // Padding(
+        //   padding: const EdgeInsets.fromLTRB(10, 40, 10, 0),
+        //   child: TopBar(configMap.botIcon),
+        // ),
       ],
     ));
   }
