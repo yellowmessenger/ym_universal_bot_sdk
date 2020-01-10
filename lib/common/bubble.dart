@@ -49,7 +49,7 @@ class _BubbleState extends State<Bubble> {
     switch (widget.msg.format) {
       case MessageFormats.Text:
         childElement =
-            Text(widget.msg.message, style: TextStyle(color: txtColor));
+        Html(data:widget.msg.message, shrinkToFit: true, defaultTextStyle: TextStyle(color: txtColor));
         break;
       case MessageFormats.Link:
         childElement =
@@ -62,8 +62,16 @@ class _BubbleState extends State<Bubble> {
         );
         break;
       case MessageFormats.MultiSelect:
-        List<Widget> x = _quickRepliesMulti(widget.msg.message, widget.msg.quickRepliesMulti, txtColor);
-        x.add(RaisedButton(onPressed: null, child: Text("Send"), color: Colors.black,));
+        List<Widget> x = _quickRepliesMulti(
+            widget.msg.message, widget.msg.quickRepliesMulti, txtColor);
+        x.add(OutlineButton(
+          onPressed: () {
+            print(selectedReportList.join(', '));
+            widget.notifyParent(selectedReportList.join(', '));
+          },
+          child: Text("Send"),
+          color: Colors.black,
+        ));
         childElement = Column(children: x);
 
         break;
@@ -148,27 +156,26 @@ class _BubbleState extends State<Bubble> {
     }
 // MultiSelectChip(multiSelectOpions);
 
-List<Widget> suggestionsMulti = [
+    List<Widget> suggestionsMulti = [
       Html(data: msg, defaultTextStyle: TextStyle(color: txtColor))
     ];
 
-    suggestionsMulti.add(
-      MultiSelectChip(multiSelectOpions,onSelectionChanged: (selectedList) {
-                setState(() {
-                  selectedReportList = selectedList;
-                });
-              },)
-              ) ;
+    suggestionsMulti.add(MultiSelectChip(
+      multiSelectOpions,
+      onSelectionChanged: (selectedList) {
+        setState(() {
+          selectedReportList = selectedList;
+        });
+      },
+    ));
 
     return suggestionsMulti;
-    ;
   }
 
   List<Widget> _quickReplies(
-      String msg, 
-      List<Options> quickReplies, Color txtColor) {
+      String msg, List<Options> quickReplies, Color txtColor) {
     List<Widget> suggestions = [
-      Html(data: msg, defaultTextStyle: TextStyle(color: txtColor))
+      Html(data: msg, shrinkToFit: true, defaultTextStyle: TextStyle(color: txtColor))
     ];
 
     return suggestions;
@@ -271,7 +278,7 @@ List<Widget> suggestionsMulti = [
       crossAxisAlignment: align,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          padding: const EdgeInsets.symmetric(vertical: 5.0),
           child: widget.msg.format != MessageFormats.CardsResponse
               ? Container(
                   margin: const EdgeInsets.all(0.0),
@@ -349,7 +356,8 @@ class _MultiSelectChipState extends State<MultiSelectChip> {
     List<Widget> choices = List();
 
     widget.reportList.forEach((item) {
-      choices.add(Container(
+      choices.add(ButtonTheme(
+        minWidth: 800,
         child: ChoiceChip(
           label: Text(item),
           selected: selectedChoices.contains(item),
@@ -370,7 +378,6 @@ class _MultiSelectChipState extends State<MultiSelectChip> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: _buildChoiceList());
+    return Column(children: _buildChoiceList());
   }
 }

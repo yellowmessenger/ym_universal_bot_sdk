@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_xmpp/flutter_xmpp.dart';
 import './database_helpers.dart';
-import 'package:ym_universal_bot_sdk/splash.dart';
+import './splash.dart';
 
 
 
