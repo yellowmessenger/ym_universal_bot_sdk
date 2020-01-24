@@ -49,8 +49,6 @@ class _ChatPageState extends State<ChatPage> {
   List<Widget> suggestions = [];
   ConfigMap configMap;
   bool hideInput = false;
-
-        configMap = ConfigMap(
   _getConfigurations() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -281,20 +279,20 @@ String removeAllHtmlTags(String htmlText) {
     return Scaffold(
         body: Stack(
       children: <Widget>[
-        // Transform.translate(
-        //   offset: Offset(screenWidth * 0.3, 0),
-        //   child: Transform.rotate(
-        //     angle: -0.3,
-        //     child: Opacity(
-        //       child: Image.network(
-        //         configMap.botIcon,
-        //         height: logoHeight,
-        //         // color: logoTintColor,
-        //       ),
-        //       opacity: 0.4,
-        //     ),
-        //   ),
-        // ),
+        Transform.translate(
+          offset: Offset(screenWidth * 0.3, 0),
+          child: Transform.rotate(
+            angle: -0.3,
+            child: Opacity(
+              child: Image.network(
+                configMap.botIcon,
+                height: logoHeight,
+                // color: logoTintColor,
+              ),
+              opacity: 0.4,
+            ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.only(top: 45),
           child: Column(
