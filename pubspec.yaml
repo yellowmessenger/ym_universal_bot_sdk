@@ -42,6 +42,7 @@ dependencies:
     path: ../speech_recognition
   sqflite:
     path: ../sqflite-1.1.8
+  avatar_glow: ^1.1.0
 
 
 dev_dependencies:
@@ -100,4 +101,4 @@ flutter:
   module:
     androidX: true
     androidPackage: com.yellowmessenger.ym_universal_bot_sdk
-    iosBundleIdentifier: com.yellowmessenger.ymUniversalBotSdk
+    iosBundleIdentifier: com.yellowmessenger.voicefirst

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:image_picker/image_picker.dart';
@@ -173,22 +174,20 @@ class _ChatPageState extends State<ChatPage> {
       );
     }
   }
-String removeAllHtmlTags(String htmlText) {
-    RegExp exp = RegExp(
-      r"<[^>]*>",
-      multiLine: true,
-      caseSensitive: true
-    );
+
+  String removeAllHtmlTags(String htmlText) {
+    RegExp exp = RegExp(r"<[^>]*>", multiLine: true, caseSensitive: true);
 
     return htmlText.replaceAll(exp, '');
   }
+
   void _setSuggestions(List<Options> quickReplies) {
     if (quickReplies != null) {
       suggestions = [];
       for (var option in quickReplies) {
         setState(() {
           suggestions.add(OutlineButton(
-            highlightedBorderColor: Colors.blue,
+              highlightedBorderColor: Colors.blue,
               child: option.image != null
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -207,8 +206,7 @@ String removeAllHtmlTags(String htmlText) {
                   refresh(option.text, title: option.title);
                 } else if (option.url != null && option.url != '') {
                   _launchURL(option.url);
-                }
-                else{
+                } else {
                   refresh(option.title);
                 }
               },
@@ -262,7 +260,10 @@ String removeAllHtmlTags(String htmlText) {
     );
 
     _speechRecognition.setRecognitionCompleteHandler(
-      (String speech) => setState(() => _isListening = false),
+      (String speech) => setState(() {
+        _isListening = false;
+        _textEditingController.clear();
+      }),
     );
 
     _speechRecognition.activate().then(
@@ -358,11 +359,11 @@ String removeAllHtmlTags(String htmlText) {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            IconButton(
-              color: Colors.white,
-              icon: Icon(Icons.attach_file),
-              onPressed: getImage,
-            ),
+            // IconButton(
+            //   color: Colors.white,
+            //   icon: Icon(Icons.attach_file),
+            //   onPressed: getImage,
+            // ),
             Flexible(
               child: TextField(
                 cursorColor: TextColorLight,
@@ -403,37 +404,84 @@ String removeAllHtmlTags(String htmlText) {
     FocusScope.of(context).unfocus();
   }
 
-  RaisedButton _getDefaultSendButton() {
-    return RaisedButton(
-      color: Colors.blue,
-      shape: CircleBorder(),
-      onPressed: _isComposingMessage
-          ? () => _textMessageSubmitted(_textEditingController.text)
-          : () {
-              if (_isAvailable && !_isListening) {
-                _speechRecognition.listen(locale: "en_US").then((result) {
-                  _textEditingController.text = resultText;
-                  _isComposingMessage = true;
-                });
-              }
-            },
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Icon(
-          _isComposingMessage ? Icons.send : Icons.mic,
-          color: TextColorLight,
-          size: 30.0,
-        ),
-      ),
-    );
+  GestureDetector _getDefaultSendButton() {
+    return GestureDetector(
+        onTap: _isComposingMessage
+            ? () => _textMessageSubmitted(_textEditingController.text)
+            : () {
+                if (_isAvailable && !_isListening) {
+                  _speechRecognition.listen(locale: "en_US").then((result) {
+                    // _textEditingController.text = resultText;
+                    _isComposingMessage = true;
+                  });
+                }
+              },
+        child: _isListening
+            ? AvatarGlow(
+                glowColor: Colors.red,
+                endRadius: 35.0,
+                duration: Duration(milliseconds: 1000),
+                repeat: true,
+                showTwoGlows: true,
+                repeatPauseDuration: Duration(milliseconds: 100),
+                child: Material(
+                  elevation: 8.0,
+                  shape: CircleBorder(),
+                  child: CircleAvatar(
+                  backgroundColor: Colors.grey[100],
+                  child: Image.asset(
+                    'images/voice-logo.png',
+                    width: 20,
+                  ),
+                  radius: 20.0,
+                ),
+                ),
+              )
+            : Material(
+                elevation: 8.0,
+                shape: CircleBorder(),
+                child: CircleAvatar(
+                  backgroundColor: Colors.grey[100],
+                  child: Image.asset(
+                    'images/voice-logo.png',
+                    width: 30,
+                  ),
+                  radius: 30.0,
+                ),
+              ));
+
+    // return RaisedButton(
+    //   color: Colors.blue,
+    //   shape: CircleBorder(),
+    //   onPressed: _isComposingMessage
+    //       ? () => _textMessageSubmitted(_textEditingController.text)
+    //       : () {
+    //           if (_isAvailable && !_isListening) {
+    //             _speechRecognition.listen(locale: "en_US").then((result) {
+    //               _textEditingController.text = resultText;
+    //               _isComposingMessage = true;
+    //             });
+    //           }
+    //         },
+    //   child: Padding(
+    //     padding: const EdgeInsets.all(8.0),
+    //     child: Icon(
+    //       _isComposingMessage ? Icons.send : Icons.mic,
+    //       color: TextColorLight,
+    //       size: 30.0,
+    //     ),
+    //   ),
+    // );
   }
 
   Future<Null> _textMessageSubmitted(String text, {String title}) async {
     if (_isListening)
       _speechRecognition.stop().then((onValue) {
-        _speechRecognition
-            .activate()
-            .then((result) => setState(() => _isAvailable = result));
+        print("stopping listener");
+        _speechRecognition.activate().then((result) => setState(() {
+              _isAvailable = result;
+              _isListening = false;
+            }));
       });
     DateTime now = DateTime.now();
     print(title);
